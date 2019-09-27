@@ -26,15 +26,19 @@ class XView2():
 
         # Create annotation dictionary
         self.anndict = dict(zip(self.jsons, self.anns))
-
+        
     def get_object_polygons(self, ann, _type="wkt"):
         p = self.anndict[ann]
         wktlist = [obj['wkt'] for obj in p['features']['xy']]
+        if os.path.basename(ann).split('_')[2] == "post":
+            dmg = [obj['properties']['subtype'] for obj in p['features']['xy']]
+        else:
+            dmg = None
         polylist = utils.wkt2list(wktlist)
         if _type == "wkt":
-            return wktlist
+            return wktlist, dmg
         elif _type == "poly":
-            return polylist
+            return polylist, dmg
 
     def get_metadata(self, ann):
         return self.anndict[ann]['metadata']
@@ -58,27 +62,45 @@ class XView2():
         self.pre_ann = dict(zip(self.pre_lbls, self.pre_anns))
         self.post_ann = dict(zip(self.post_lbls, self.post_anns))
 
-    def show_anns(self, ann):
+    def show_anns(self,ann):
         metadata = self.get_metadata(ann)
         img_name = metadata['img_name']
         img_path = os.path.join(self.img_dir, img_name)
         imgfile = plt.imread(img_path)
-
+        
         # Get polygons
-        plist = self.get_object_polygons(ann, _type="poly")
+        plist, dmg = self.get_object_polygons(ann, _type="poly")
         print("Number of objects =", len(plist))
-
-        plt.figure(figsize=(15, 15))
+        
+        plt.figure(figsize=(15,15))
         ax = plt.gca()
         polygons = []
+        colordict = {'no-damage':'w',
+                     'minor-damage':'darseagreen',
+                     'major-damage':'orange',
+                     'destroyed':'red',
+                     'un-classified':'b'}
         color = []
         if len(plist) != 0:
-            for p in plist:
-                c = (np.random.random((1, 3)) * 0.6 + 0.4).tolist()[0]
-                polygons.append(Polygon(p[0]))
-                color.append(c)
-                p = PatchCollection(polygons, facecolor=color, linewidths=0, alpha=0.4)
-            ax.add_collection(p)
-            p = PatchCollection(polygons, edgecolors=color, facecolor='none', linewidths=2)
-            ax.add_collection(p)
+            # Pre_disaster Images
+            if dmg == None:
+                for p in plist:
+                    c = (np.random.random((1, 3)) * 0.6 + 0.4).tolist()[0]
+                    polygons.append(Polygon(p[0]))
+                    color.append(c)
+                    p = PatchCollection(polygons, facecolor=color, linewidths=0, alpha=0.4)
+                ax.add_collection(p)
+                p = PatchCollection(polygons, edgecolors=color, facecolor='none', linewidths=2)
+                ax.add_collection(p)
+                
+            # Post_disaster Images
+            else:
+                for p, d in zip(plist,dmg):
+                    c = colordict[d]
+                    polygons.append(Polygon(p[0]))
+                    color.append(c)
+                    p = PatchCollection(polygons, facecolor=color, linewidths=0, alpha=0.4)
+                ax.add_collection(p)
+                p = PatchCollection(polygons, edgecolors=color, facecolor='none', linewidths=2)
+                ax.add_collection(p)
         ax.imshow(imgfile)
