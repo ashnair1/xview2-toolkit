@@ -2,7 +2,7 @@
 
 This repository documents my attempts in solving the xView2 Building Damage Assessment Challenge.
 
-Challenge Deadline: December 22nd, 2019
+Challenge Deadline: November 22nd, 2019
 
 #### Steps:
 1. Data preprocessing and visualising
