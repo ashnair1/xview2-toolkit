@@ -17,6 +17,6 @@ The training set also includes label information in the form of metadata and bui
 A test dataset (2.6 GB, GZIP archive) is also provided for the purposes of competition; only input images are provided for the test set. The challenge is to localize buildings and score building damage on the test set! The 933 pairs of images in the test set were sampled from a similar distribution of disasters and instrumentation as the training dataset. Filenames in the test set have a numerical ID and indicate whether the image is "pre" or "post" disaster, but test filenames do not indicate the location or type of disaster.
 
 ### Links
-[Challenge homepage](https://xview2.org/) </br>
-[xBD Paper](http://openaccess.thecvf.com/content_CVPRW_2019/papers/cv4gc/Gupta_Creating_xBD_A_Dataset_for_Assessing_Building_Damage_from_Satellite_CVPRW_2019_paper.pdf)
+1. [Challenge homepage](https://xview2.org/) </br>
+2. [xBD Paper](http://openaccess.thecvf.com/content_CVPRW_2019/papers/cv4gc/Gupta_Creating_xBD_A_Dataset_for_Assessing_Building_Damage_from_Satellite_CVPRW_2019_paper.pdf)
 
