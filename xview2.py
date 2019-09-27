@@ -62,24 +62,24 @@ class XView2():
         self.pre_ann = dict(zip(self.pre_lbls, self.pre_anns))
         self.post_ann = dict(zip(self.post_lbls, self.post_anns))
 
-    def show_anns(self,ann):
+    def show_anns(self, ann):
         metadata = self.get_metadata(ann)
         img_name = metadata['img_name']
         img_path = os.path.join(self.img_dir, img_name)
         imgfile = plt.imread(img_path)
-        
+
         # Get polygons
         plist, dmg = self.get_object_polygons(ann, _type="poly")
         print("Number of objects =", len(plist))
-        
+
         plt.figure(figsize=(15,15))
         ax = plt.gca()
         polygons = []
-        colordict = {'no-damage':'w',
-                     'minor-damage':'darseagreen',
-                     'major-damage':'orange',
-                     'destroyed':'red',
-                     'un-classified':'b'}
+        colordict = {'no-damage': 'w',
+                     'minor-damage': 'darseagreen',
+                     'major-damage': 'orange',
+                     'destroyed': 'red',
+                     'un-classified': 'b'}
         color = []
         if len(plist) != 0:
             # Pre_disaster Images
@@ -92,7 +92,7 @@ class XView2():
                 ax.add_collection(p)
                 p = PatchCollection(polygons, edgecolors=color, facecolor='none', linewidths=2)
                 ax.add_collection(p)
-                
+
             # Post_disaster Images
             else:
                 for p, d in zip(plist,dmg):
@@ -103,4 +103,16 @@ class XView2():
                 ax.add_collection(p)
                 p = PatchCollection(polygons, edgecolors=color, facecolor='none', linewidths=2)
                 ax.add_collection(p)
+        ax.axis('off')
+        ax.set_title(os.path.basename(ann[:-5]))
         ax.imshow(imgfile)
+        plt.show()
+
+
+if __name__ == "__main__":
+    data_dir = "./data"
+    folder = "train"
+    img_dir = os.path.join(data_dir, folder, 'images')
+    lbl_dir = os.path.join(data_dir, folder, 'labels')
+    xview = XView2(img_dir, lbl_dir)
+    xview.show_anns('./data/train/labels/palu-tsunami_00000002_post_disaster.json')
