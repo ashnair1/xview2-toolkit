@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 import numpy as np
+import pandas as pd
 import time
 
 import utils
@@ -26,7 +27,12 @@ class XView2():
 
         # Create annotation dictionary
         self.anndict = dict(zip(self.jsons, self.anns))
-        
+        # Create annotation dataframe
+        print('Creating annotation dataframe...')
+        tic = time.time()
+        self.anndf = self.generate_dataframe()
+        print('Done (t={:0.2f}s)'.format(time.time()- tic))
+
     def get_object_polygons(self, ann, _type="wkt"):
         p = self.anndict[ann]
         wktlist = [obj['wkt'] for obj in p['features']['xy']]
@@ -61,6 +67,39 @@ class XView2():
         # Create annotation dictionary
         self.pre_ann = dict(zip(self.pre_lbls, self.pre_anns))
         self.post_ann = dict(zip(self.post_lbls, self.post_anns))
+
+    def generate_dataframe(self):
+        ann_list = []
+        for fname, ann in self.anndict.items():
+            # Get features
+            feature_type = []
+            uids = []
+            pixwkts = []
+            geowkts = []
+            dmg_cats = []
+
+            for i in ann['features']['xy']:
+                feature_type.append(i['properties']['feature_type'])
+                uids.append(i['properties']['uid'])
+                pixwkts.append(i['wkt'])
+                if 'subtype' in list(i['properties'].keys()):
+                    dmg_cats.append(i['properties']['subtype'])
+                else:
+                    dmg_cats.append(None)
+
+            for i in ann['features']['lng_lat']:
+                geowkts.append(i['wkt'])
+
+            # Get Metadata
+            cols = list(ann['metadata'].keys())
+            vals = list(ann['metadata'].values())
+
+            newcols = ['obj_type', 'uid', 'pixwkt', 'geowkt', 'dmg_cat'] + cols
+            newvals = [[f, u, pw, gw, dmg] + vals for f, u, pw, gw, dmg in zip(feature_type, uids, pixwkts, geowkts, dmg_cats)]
+            df = pd.DataFrame(newvals, columns=newcols)
+            ann_list.append(df)
+        anndf = pd.concat(ann_list, ignore_index=True)
+        return anndf
 
     def show_anns(self, ann):
         metadata = self.get_metadata(ann)
