@@ -1,6 +1,6 @@
 ## xView2 Challenge: Building Damage Assessment
 
-This repository documents my attempts in solving the xView2 Building Damage Assessment Challenge.
+This repository documents my attempts in solving the [xView2 Building Damage Assessment Challenge](https://xview2.org/).
 
 Challenge Deadline: November 22nd, 2019
 
@@ -14,9 +14,5 @@ The training dataset contains 2799 pairs of high-resolution RGB satellite imager
 
 The training set also includes label information in the form of metadata and building annotations. Labels are provided in JSON format with filenames corresponding to each image in the set. Polygon annotations follow the WKT format.
 
-A test dataset (2.6 GB, GZIP archive) is also provided for the purposes of competition; only input images are provided for the test set. The challenge is to localize buildings and score building damage on the test set! The 933 pairs of images in the test set were sampled from a similar distribution of disasters and instrumentation as the training dataset. Filenames in the test set have a numerical ID and indicate whether the image is "pre" or "post" disaster, but test filenames do not indicate the location or type of disaster.
-
-### Links
-1. [Challenge homepage](https://xview2.org/) </br>
-2. [xBD Paper](http://openaccess.thecvf.com/content_CVPRW_2019/papers/cv4gc/Gupta_Creating_xBD_A_Dataset_for_Assessing_Building_Damage_from_Satellite_CVPRW_2019_paper.pdf)
+A test dataset (2.6 GB, GZIP archive) is also provided for the purposes of competition; only input images are provided for the test set. The challenge is to localize buildings and score building damage on the test set! The 933 pairs of images in the test set were sampled from a similar distribution of disasters and instrumentation as the training dataset. Filenames in the test set have a numerical ID and indicate whether the image is "pre" or "post" disaster, but test filenames do not indicate the location or type of disaster. Further information regarding the dataset can be found in their [CVPR paper](http://openaccess.thecvf.com/content_CVPRW_2019/papers/cv4gc/Gupta_Creating_xBD_A_Dataset_for_Assessing_Building_Damage_from_Satellite_CVPRW_2019_paper.pdf)
 
