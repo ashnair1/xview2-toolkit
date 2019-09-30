@@ -54,6 +54,7 @@ class XView2():
             pixwkts = []
             geowkts = []
             dmg_cats = []
+            imids = []
 
             for i in ann['features']['xy']:
                 feature_type.append(i['properties']['feature_type'])
@@ -63,6 +64,7 @@ class XView2():
                     dmg_cats.append(i['properties']['subtype'])
                 else:
                     dmg_cats.append(None)
+                imids.append(fname.split('_')[1])
 
             for i in ann['features']['lng_lat']:
                 geowkts.append(i['wkt'])
@@ -71,8 +73,8 @@ class XView2():
             cols = list(ann['metadata'].keys())
             vals = list(ann['metadata'].values())
 
-            newcols = ['obj_type', 'uid', 'pixwkt', 'geowkt', 'dmg_cat'] + cols
-            newvals = [[f, u, pw, gw, dmg] + vals for f, u, pw, gw, dmg in zip(feature_type, uids, pixwkts, geowkts, dmg_cats)]
+            newcols = ['obj_type', 'img_id', 'pixwkt', 'geowkt', 'dmg_cat', 'uid'] + cols
+            newvals = [[f, _id, pw, gw, dmg, u] + vals for f, _id, pw, gw, dmg, u in zip(feature_type, imids, pixwkts, geowkts, dmg_cats, uids)]
             df = pd.DataFrame(newvals, columns=newcols)
             ann_list.append(df)
         anndf = pd.concat(ann_list, ignore_index=True)
@@ -182,4 +184,4 @@ if __name__ == "__main__":
     lbl_dir = os.path.join(data_dir, folder, 'labels')
     xview = XView2(img_dir, lbl_dir)
     xview.show_anns('./data/train/labels/palu-tsunami_00000002_post_disaster.json')
-    print(xview.anndf.head())
+    print(xview.anndf.columns)
