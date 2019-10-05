@@ -6,6 +6,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 import numpy as np
 import pandas as pd
+import shapely.wkt
 import time
 
 import utils
@@ -40,6 +41,14 @@ class XView2():
         self.anndf = self.generate_dataframe()
         print('Done (t={:0.2f}s)'.format(time.time() - tic))
 
+        _, _ = self.pre_post_split()
+
+        self.colordict = {'no-damage': 'w',
+                          'minor-damage': 'darseagreen',
+                          'major-damage': 'orange',
+                          'destroyed': 'red',
+                          'un-classified': 'b'}
+
     def generate_dataframe(self):
         """
         Generate main annotation dataframe.
@@ -63,7 +72,7 @@ class XView2():
                 if 'subtype' in list(i['properties'].keys()):
                     dmg_cats.append(i['properties']['subtype'])
                 else:
-                    dmg_cats.append(None)
+                    dmg_cats.append("none")
                 imids.append(fname.split('_')[1])
 
             for i in ann['features']['lng_lat']:
@@ -82,7 +91,7 @@ class XView2():
 
     def get_object_polygons(self, ann, wkt_type="pixel", _type="wkt"):
         """
-        Return object polygons & damage status
+        Return object polygons & damage status.
 
         :param ann (str): location of annotation file to parse
         :param wkt_type (str): wkt version to be returned (pixel or geo)
@@ -107,10 +116,61 @@ class XView2():
         """
         Generate pre-disaster and post-disaster dataframes from main dataframe.
 
-        :return: None
+        :return: pre disaster and post disaster dataframes
         """
         self.pre_dist_df = self.anndf.loc[self.anndf["dmg_cat"] == 'none']
         self.post_dist_df = self.anndf.loc[self.anndf["dmg_cat"] != 'none']
+        return self.pre_dist_df, self.post_dist_df
+
+    def view_pre_post(self, disaster="guatemala-volcano", imid="00000000"):
+        """
+        Visualise the effect of a disaster via pre and post disaster images.
+
+        :param disaster (str): Disaster name from the following list:
+        ['guatemala-volcano', 'hurricane-florence', 'hurricane-harvey',
+        'hurricane-matthew', 'hurricane-michael', 'mexico-earthquake',
+        'midwest-flooding', 'palu-tsunami', 'santa-rosa-wildfire','socal-fire']
+
+        :param imid (str): img id
+        :return: None
+        """
+        assert disaster in self.anndf.disaster.unique()
+
+        pre_df = self.pre_dist_df[(self.pre_dist_df['img_id'] == imid) &
+                                  (self.pre_dist_df['disaster'] == disaster)]
+        post_df = self.post_dist_df[(self.post_dist_df['img_id'] == imid) &
+                                    (self.post_dist_df['disaster'] == disaster)]
+
+        assert len(pre_df) + len(post_df) == len(self.anndf[(self.anndf['disaster'] == disaster) & (self.anndf['img_id'] == imid)])
+
+        fig, axes = plt.subplots(1, 2, figsize=(15, 15), sharey=True)
+
+        # Get pre and post disaster images
+        pre_im = plt.imread(os.path.join(self.img_dir, pre_df.img_name.unique()[0]))
+        post_im = plt.imread(os.path.join(self.img_dir, post_df.img_name.unique()[0]))
+        axes[0].imshow(pre_im)
+        axes[1].imshow(post_im)
+
+        # Get pre-disaster building polygons
+        for index, row in pre_df.iterrows():
+            poly = shapely.wkt.loads(row['pixwkt'])
+            dmg_stat = row['dmg_cat']
+            axes[0].plot(*poly.exterior.xy, color='c')
+
+        # Get post-disaster building polygons
+        for index, row in post_df.iterrows():
+            poly = shapely.wkt.loads(row['pixwkt'])
+            dmg_stat = row['dmg_cat']
+            axes[1].plot(*poly.exterior.xy, color=self.colordict[dmg_stat])
+
+        axes[0].title.set_text('Pre Disaster')
+        axes[0].axis('off')
+        axes[1].title.set_text('Post Disaster')
+        axes[1].axis('off')
+
+        plt.suptitle(disaster + "_" + imid, fontsize=14, fontweight='bold')
+
+        plt.show()
 
     def show_anns(self, ann):
         """
@@ -131,11 +191,6 @@ class XView2():
         plt.figure(figsize=(15, 15))
         ax = plt.gca()
         polygons = []
-        colordict = {'no-damage': 'w',
-                     'minor-damage': 'darseagreen',
-                     'major-damage': 'orange',
-                     'destroyed': 'red',
-                     'un-classified': 'b'}
         color = []
         if len(plist) != 0:
             # Pre_disaster Images
@@ -158,7 +213,7 @@ class XView2():
             # Post_disaster Images
             else:
                 for p, d in zip(plist, dmg):
-                    c = colordict[d]
+                    c = self.colordict[d]
                     polygons.append(Polygon(p[0]))
                     color.append(c)
                     p = PatchCollection(polygons,
@@ -184,4 +239,4 @@ if __name__ == "__main__":
     lbl_dir = os.path.join(data_dir, folder, 'labels')
     xview = XView2(img_dir, lbl_dir)
     xview.show_anns('./data/train/labels/palu-tsunami_00000002_post_disaster.json')
-    print(xview.anndf.columns)
+    xview.view_pre_post('palu-tsunami', '00000002')
