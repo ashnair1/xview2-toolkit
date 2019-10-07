@@ -1,13 +1,14 @@
-import os
-
 import json
-import matplotlib.pyplot as plt
+import os
+import time
+
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
-import numpy as np
+import matplotlib.pyplot as plt
+
 import pandas as pd
+
 import shapely.wkt
-import time
 
 import utils
 
@@ -43,8 +44,9 @@ class XView2():
 
         _, _ = self.pre_post_split()
 
-        self.colordict = {'no-damage': 'w',
-                          'minor-damage': 'darseagreen',
+        self.colordict = {'none': 'c',
+                          'no-damage': 'w',
+                          'minor-damage': 'darkseagreen',
                           'major-damage': 'orange',
                           'destroyed': 'red',
                           'un-classified': 'b'}
@@ -73,7 +75,7 @@ class XView2():
                     dmg_cats.append(i['properties']['subtype'])
                 else:
                     dmg_cats.append("none")
-                imids.append(fname.split('_')[1])
+                imids.append(ann['metadata']['img_name'].split('_')[1])
 
             for i in ann['features']['lng_lat']:
                 geowkts.append(i['wkt'])
@@ -192,27 +194,9 @@ class XView2():
         ax = plt.gca()
         polygons = []
         color = []
-        if len(plist) != 0:
-            # Pre_disaster Images
-            if dmg is None:
-                for p in plist:
-                    c = (np.random.random((1, 3)) * 0.6 + 0.4).tolist()[0]
-                    polygons.append(Polygon(p[0]))
-                    color.append(c)
-                    p = PatchCollection(polygons,
-                                        facecolor=color,
-                                        linewidths=0,
-                                        alpha=0.4)
-                ax.add_collection(p)
-                p = PatchCollection(polygons,
-                                    edgecolors=color,
-                                    facecolor='none',
-                                    linewidths=2)
-                ax.add_collection(p)
 
-            # Post_disaster Images
-            else:
-                for p, d in zip(plist, dmg):
+        if len(plist) != 0:
+            for p, d in zip(plist, dmg):
                     c = self.colordict[d]
                     polygons.append(Polygon(p[0]))
                     color.append(c)
@@ -220,12 +204,12 @@ class XView2():
                                         facecolor=color,
                                         linewidths=0,
                                         alpha=0.4)
-                ax.add_collection(p)
-                p = PatchCollection(polygons,
-                                    edgecolors=color,
-                                    facecolor='none',
-                                    linewidths=2)
-                ax.add_collection(p)
+            ax.add_collection(p)
+            p = PatchCollection(polygons,
+                                edgecolors=color,
+                                facecolor='none',
+                                linewidths=2)
+            ax.add_collection(p)
         ax.axis('off')
         ax.set_title(os.path.basename(ann[:-5]))
         ax.imshow(imgfile)
