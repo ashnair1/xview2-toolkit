@@ -223,7 +223,6 @@ class XView2():
         if len(plist) != 0:
             for p, d in zip(plist, dmg):
                     c = self.colordict[d]
-                    print(p[0])
                     polygons.append(Polygon(p[0]))
                     color.append(c)
                     p = PatchCollection(polygons,
