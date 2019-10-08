@@ -2,9 +2,13 @@ import json
 import os
 import time
 
+from PIL import Image, ImageDraw
+
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
+
+import numpy as np
 
 import pandas as pd
 
@@ -98,7 +102,7 @@ class XView2():
         :param ann (str): location of annotation file to parse
         :param wkt_type (str): wkt version to be returned (pixel or geo)
         :param _type (str): format of polygons to be returned (wkt or list of lists)
-        :return: None
+        :return: polygon list & dmg rating list
         """
         fname = os.path.basename(ann)[:-5]
         img_name = fname + ".png"
@@ -113,6 +117,27 @@ class XView2():
             return wktlist, dmg
         elif _type == "poly":
             return polylist, dmg
+
+    def generate_segmap(self, ann):
+        """
+        Generates a segmentation map of a specified annotation.
+
+        :return: seg map (numpy array)
+        """
+        plist, _ = self.get_object_polygons(ann, _type="poly")
+        fname = os.path.basename(ann)[:-5]
+        img_name = fname + ".png"
+        ann = self.anndf.loc[self.anndf["img_name"] == img_name]
+        width, height = ann['width'].unique()[0], ann['height'].unique()[0]
+        bg = np.zeros((width, height))
+
+        for p in plist:
+            polygon = [(coord[0], coord[1]) for coord in p[0]]
+            img = Image.new('L', (width, height), 0)
+            ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+            mask = np.array(img)
+            bg += mask
+        return bg
 
     def pre_post_split(self):
         """
@@ -198,6 +223,7 @@ class XView2():
         if len(plist) != 0:
             for p, d in zip(plist, dmg):
                     c = self.colordict[d]
+                    print(p[0])
                     polygons.append(Polygon(p[0]))
                     color.append(c)
                     p = PatchCollection(polygons,
@@ -222,5 +248,5 @@ if __name__ == "__main__":
     img_dir = os.path.join(data_dir, folder, 'images')
     lbl_dir = os.path.join(data_dir, folder, 'labels')
     xview = XView2(img_dir, lbl_dir)
-    xview.show_anns('./data/train/labels/palu-tsunami_00000002_post_disaster.json')
-    xview.view_pre_post('palu-tsunami', '00000002')
+    xview.show_anns('./data/train/labels/guatemala-volcano_00000001_post_disaster.json')
+    xview.view_pre_post('guatemala-volcano', '00000001')
