@@ -1,14 +1,11 @@
 import json
 import os
+import shutil
 import time
-
-from PIL import Image, ImageDraw
 
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
-
-import numpy as np
 
 import pandas as pd
 
@@ -62,7 +59,7 @@ class XView2():
         :return: anndf (pandas DataFrame)
         """
         ann_list = []
-        for fname, ann in self.anndict.items():
+        for ann in self.anndict.values():
             # Get features
             feature_type = []
             uids = []
@@ -95,49 +92,23 @@ class XView2():
         anndf = pd.concat(ann_list, ignore_index=True)
         return anndf
 
-    def get_object_polygons(self, ann, wkt_type="pixel", _type="wkt"):
+    def generate_segmaps(self):
         """
-        Return object polygons & damage status.
+        Generate segmentation maps for dataset.
 
-        :param ann (str): location of annotation file to parse
-        :param wkt_type (str): wkt version to be returned (pixel or geo)
-        :param _type (str): format of polygons to be returned (wkt or list of lists)
-        :return: polygon list & dmg rating list
+        :return: None
         """
-        fname = os.path.basename(ann)[:-5]
-        img_name = fname + ".png"
-        ann = self.anndf.loc[self.anndf["img_name"] == img_name]
-        if wkt_type == "pixel":
-            wktlist = ann['pixwkt'].tolist()
-        elif wkt_type == "geo":
-            wktlist = ann['geowkt'].tolist()
-        dmg = ann['dmg_cat'].tolist()
-        polylist = utils.wkt2list(wktlist)
-        if _type == "wkt":
-            return wktlist, dmg
-        elif _type == "poly":
-            return polylist, dmg
+        self.seg_dir = os.path.join(os.path.dirname(self.img_dir), 'segmaps')
+        # Create segementation directory
+        if os.path.exists(self.seg_dir) is False:
+            os.mkdir(self.seg_dir)
+        else:
+            shutil.rmtree(self.seg_dir)
+            os.mkdir(self.seg_dir)
 
-    def generate_segmap(self, ann):
-        """
-        Generates a segmentation map of a specified annotation.
-
-        :return: seg map (numpy array)
-        """
-        plist, _ = self.get_object_polygons(ann, _type="poly")
-        fname = os.path.basename(ann)[:-5]
-        img_name = fname + ".png"
-        ann = self.anndf.loc[self.anndf["img_name"] == img_name]
-        width, height = ann['width'].unique()[0], ann['height'].unique()[0]
-        bg = np.zeros((width, height))
-
-        for p in plist:
-            polygon = [(coord[0], coord[1]) for coord in p[0]]
-            img = Image.new('L', (width, height), 0)
-            ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
-            mask = np.array(img)
-            bg += mask
-        return bg
+        for j in self.jsons:
+            segmap = utils.generate_segmap(self.anndf, j)
+            plt.imsave(os.path.join(self.seg_dir, os.path.basename(j)[:-5]), segmap)
 
     def pre_post_split(self):
         """
@@ -212,7 +183,7 @@ class XView2():
         imgfile = plt.imread(img_path)
 
         # Get polygons
-        plist, dmg = self.get_object_polygons(ann, _type="poly")
+        plist, dmg = utils.get_object_polygons(self.anndf, ann, _type="poly")
         print("Number of objects =", len(plist))
 
         plt.figure(figsize=(15, 15))
@@ -220,15 +191,16 @@ class XView2():
         polygons = []
         color = []
 
-        if len(plist) != 0:
+        # As long as plist is non-empty, add polys to axes
+        if plist:
             for p, d in zip(plist, dmg):
-                    c = self.colordict[d]
-                    polygons.append(Polygon(p[0]))
-                    color.append(c)
-                    p = PatchCollection(polygons,
-                                        facecolor=color,
-                                        linewidths=0,
-                                        alpha=0.4)
+                c = self.colordict[d]
+                polygons.append(Polygon(p[0]))
+                color.append(c)
+                p = PatchCollection(polygons,
+                                    facecolor=color,
+                                    linewidths=0,
+                                    alpha=0.4)
             ax.add_collection(p)
             p = PatchCollection(polygons,
                                 edgecolors=color,
