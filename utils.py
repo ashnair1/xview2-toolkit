@@ -73,7 +73,10 @@ def generate_segmap(anndf, ann):
     fname = os.path.basename(ann)[:-5]
     img_name = fname + ".png"
     ann = anndf.loc[anndf["img_name"] == img_name]
-    width, height = ann['width'].unique()[0], ann['height'].unique()[0]
+    try:
+        width, height = ann['width'].unique()[0], ann['height'].unique()[0]
+    except:
+        width, height = 1024, 1024
     bg = np.zeros((width, height))
 
     for p in plist:

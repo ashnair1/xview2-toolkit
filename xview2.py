@@ -221,3 +221,4 @@ if __name__ == "__main__":
     xview = XView2(img_dir, lbl_dir)
     xview.show_anns('./data/train/labels/guatemala-volcano_00000001_post_disaster.json')
     xview.view_pre_post('guatemala-volcano', '00000001')
+    xview.generate_segmaps()
