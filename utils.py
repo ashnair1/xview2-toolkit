@@ -77,12 +77,14 @@ def generate_segmap(anndf, ann):
         width, height = ann['width'].unique()[0], ann['height'].unique()[0]
     except:
         width, height = 1024, 1024
-    bg = np.zeros((width, height))
+    bg = np.zeros((width, height), dtype=np.uint8)
 
     for p in plist:
         polygon = [(coord[0], coord[1]) for coord in p[0]]
         img = Image.new('L', (width, height), 0)
         ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
         mask = np.array(img)
+        # Assert mask is binary
+        assert np.array_equal(mask, mask.astype(bool))
         bg += mask
     return bg

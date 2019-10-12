@@ -9,7 +9,11 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 
+from PIL import Image
+
 import shapely.wkt
+
+from tqdm import tqdm
 
 import utils
 
@@ -106,9 +110,13 @@ class XView2():
             shutil.rmtree(self.seg_dir)
             os.mkdir(self.seg_dir)
 
-        for j in self.jsons:
+        for j in tqdm(self.jsons):
             segmap = utils.generate_segmap(self.anndf, j)
-            plt.imsave(os.path.join(self.seg_dir, os.path.basename(j)[:-5]), segmap)
+            im = Image.fromarray(255 * segmap)
+            im.save(os.path.join(self.seg_dir, os.path.basename(j)[:-5]) + ".png")
+            #import matplotlib.cm as cm
+            #plt.imsave(os.path.join(self.seg_dir,
+            #                        os.path.basename(j)[:-5]) + ".jpg", 255*segmap,cmap=cm.gray)
 
     def pre_post_split(self):
         """
@@ -215,7 +223,7 @@ class XView2():
 
 if __name__ == "__main__":
     data_dir = "./data"
-    folder = "train"
+    folder = "mini"
     img_dir = os.path.join(data_dir, folder, 'images')
     lbl_dir = os.path.join(data_dir, folder, 'labels')
     xview = XView2(img_dir, lbl_dir)
