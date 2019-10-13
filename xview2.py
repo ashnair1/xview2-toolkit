@@ -96,13 +96,13 @@ class XView2():
         anndf = pd.concat(ann_list, ignore_index=True)
         return anndf
 
-    def generate_segmaps(self):
+    def generate_dmg_segmaps(self):
         """
         Generate segmentation maps for dataset.
 
         :return: None
         """
-        self.seg_dir = os.path.join(os.path.dirname(self.img_dir), 'segmaps')
+        self.seg_dir = os.path.join(os.path.dirname(self.img_dir), 'cls_segmaps')
         # Create segementation directory
         if os.path.exists(self.seg_dir) is False:
             os.mkdir(self.seg_dir)
@@ -112,11 +112,8 @@ class XView2():
 
         for j in tqdm(self.jsons):
             segmap = utils.generate_segmap(self.anndf, j)
-            im = Image.fromarray(255 * segmap)
+            im = Image.fromarray(segmap)
             im.save(os.path.join(self.seg_dir, os.path.basename(j)[:-5]) + ".png")
-            #import matplotlib.cm as cm
-            #plt.imsave(os.path.join(self.seg_dir,
-            #                        os.path.basename(j)[:-5]) + ".jpg", 255*segmap,cmap=cm.gray)
 
     def pre_post_split(self):
         """
@@ -227,6 +224,6 @@ if __name__ == "__main__":
     img_dir = os.path.join(data_dir, folder, 'images')
     lbl_dir = os.path.join(data_dir, folder, 'labels')
     xview = XView2(img_dir, lbl_dir)
-    xview.show_anns('./data/train/labels/guatemala-volcano_00000001_post_disaster.json')
-    xview.view_pre_post('guatemala-volcano', '00000001')
-    xview.generate_segmaps()
+    xview.show_anns('./data/train/labels/palu-tsunami_00000000_post_disaster.json')
+    xview.view_pre_post('palu-tsunami', '00000000')
+    xview.generate_dmg_segmaps()

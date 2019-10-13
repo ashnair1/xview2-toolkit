@@ -65,11 +65,23 @@ def generate_segmap(anndf, ann):
     """
     Generate a segmentation map of specified annotation.
 
+    Each pixel of the segmentation map will indicate the status of the bldg
+    as defined in dmg_dict.
+
+    Note: 'none' indicates its a pre disaster annotation.
+
     :param ann (str): location of annotation file to parse
     :param anndf (pandas dataframe): annotation dataframe
     :return: seg map (numpy array)
     """
-    plist, _ = get_object_polygons(anndf, ann, _type="poly")
+    dmg_dict = {'none': 1,
+                'no-damage': 1,
+                'minor-damage': 2,
+                'major-damage': 3,
+                'destroyed': 4,
+                'un-classified': 0}
+
+    plist, dmg = get_object_polygons(anndf, ann, _type="poly")
     fname = os.path.basename(ann)[:-5]
     img_name = fname + ".png"
     ann = anndf.loc[anndf["img_name"] == img_name]
@@ -79,12 +91,12 @@ def generate_segmap(anndf, ann):
         width, height = 1024, 1024
     bg = np.zeros((width, height), dtype=np.uint8)
 
-    for p in plist:
+    for p, d in zip(plist, dmg):
         polygon = [(coord[0], coord[1]) for coord in p[0]]
         img = Image.new('L', (width, height), 0)
-        ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
+        ImageDraw.Draw(img).polygon(polygon, outline=dmg_dict[d], fill=dmg_dict[d])
         mask = np.array(img)
-        # Assert mask is binary
-        assert np.array_equal(mask, mask.astype(bool))
-        bg += mask
+        bg = np.maximum(bg, mask)
+        # Assert max dmg of bldg
+        assert np.max(bg) <= 4
     return bg
