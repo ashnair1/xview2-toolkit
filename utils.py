@@ -100,3 +100,45 @@ def generate_segmap(anndf, ann):
         # Assert max dmg of bldg
         assert np.max(bg) <= 4
     return bg
+
+
+def generate_coco(df):
+    """
+    Generate dataset in MS COCO format.
+
+    :param ann (str): location of annotation file to parse
+    :param df (pandas dataframe): pre or post annotation dataframe
+    :return: seg map (numpy array)
+    """
+    categories = [{'id': 1, 'name': 'no-damage'},
+                  {'id': 2, 'name': 'minor-damage'},
+                  {'id': 3, 'name': 'major-damage'},
+                  {'id': 4, 'name': 'destroyed'}]
+    images = []
+    annotations = []
+
+    # Create Image field
+    img_names = list(df.img_name.unique())
+    img_ids = [i for i in img_names]
+    img_dict = dict(zip(img_names, img_ids))
+    width, height = 1024, 1024
+
+    img_field = []
+
+    for im_name, imid in img_dict.items():
+        im = {'id': imid, 'file_name': im_name, 'width': width, 'height': height}
+        img_field.append(im)
+
+    # Create annotation field
+
+    # Annotation field contains 
+    """
+    id:
+    image_id:
+    category_id:
+    category_name:
+    bbox:
+    segmentation:
+    area:
+    """
+    pass
