@@ -154,7 +154,6 @@ def generate_coco(predf, postdf):
         img_field.append(im)
 
     # Create annotation field
-
     cat = {'no-damage': 1,
            'minor-damage': 2,
            'major-damage': 3,

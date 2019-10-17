@@ -3,3 +3,4 @@ data/
 *.tar.gz
 *.json
 *.png
+*.pyc
