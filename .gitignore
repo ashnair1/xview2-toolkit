@@ -1,3 +1,5 @@
 data/
 *.ipynb
 *.tar.gz
+*.json
+*.png

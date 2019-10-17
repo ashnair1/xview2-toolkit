@@ -71,6 +71,7 @@ class XView2():
             geowkts = []
             dmg_cats = []
             imids = []
+            types = []
 
             for i in ann['features']['xy']:
                 feature_type.append(i['properties']['feature_type'])
@@ -81,6 +82,7 @@ class XView2():
                 else:
                     dmg_cats.append("none")
                 imids.append(ann['metadata']['img_name'].split('_')[1])
+                types.append(ann['metadata']['img_name'].split('_')[2])
 
             for i in ann['features']['lng_lat']:
                 geowkts.append(i['wkt'])
@@ -89,8 +91,8 @@ class XView2():
             cols = list(ann['metadata'].keys())
             vals = list(ann['metadata'].values())
 
-            newcols = ['obj_type', 'img_id', 'pixwkt', 'geowkt', 'dmg_cat', 'uid'] + cols
-            newvals = [[f, _id, pw, gw, dmg, u] + vals for f, _id, pw, gw, dmg, u in zip(feature_type, imids, pixwkts, geowkts, dmg_cats, uids)]
+            newcols = ['obj_type', 'img_id', 'type', 'pixwkt', 'geowkt', 'dmg_cat', 'uid'] + cols
+            newvals = [[f, _id, t, pw, gw, dmg, u] + vals for f, _id, t, pw, gw, dmg, u in zip(feature_type, imids, types, pixwkts, geowkts, dmg_cats, uids)]
             df = pd.DataFrame(newvals, columns=newcols)
             ann_list.append(df)
         anndf = pd.concat(ann_list, ignore_index=True)
@@ -115,14 +117,22 @@ class XView2():
             im = Image.fromarray(segmap)
             im.save(os.path.join(self.seg_dir, os.path.basename(j)[:-5]) + ".png")
 
+    def generate_coco(self):
+        """
+        Convert annotations to MS-COCO format.
+
+        :return: None
+        """
+        utils.generate_coco(self.pre_dist_df, self.post_dist_df)
+
     def pre_post_split(self):
         """
         Generate pre-disaster and post-disaster dataframes from main dataframe.
 
         :return: pre disaster and post disaster dataframes
         """
-        self.pre_dist_df = self.anndf.loc[self.anndf["dmg_cat"] == 'none']
-        self.post_dist_df = self.anndf.loc[self.anndf["dmg_cat"] != 'none']
+        self.pre_dist_df = self.anndf.loc[self.anndf["type"] == 'pre']
+        self.post_dist_df = self.anndf.loc[self.anndf["type"] == 'post']
         return self.pre_dist_df, self.post_dist_df
 
     def view_pre_post(self, disaster="guatemala-volcano", imid="00000000"):
@@ -220,10 +230,11 @@ class XView2():
 
 if __name__ == "__main__":
     data_dir = "./data"
-    folder = "mini"
+    folder = "train"
     img_dir = os.path.join(data_dir, folder, 'images')
     lbl_dir = os.path.join(data_dir, folder, 'labels')
     xview = XView2(img_dir, lbl_dir)
     xview.show_anns('./data/train/labels/palu-tsunami_00000000_post_disaster.json')
     xview.view_pre_post('palu-tsunami', '00000000')
     xview.generate_dmg_segmaps()
+    xview.generate_coco()

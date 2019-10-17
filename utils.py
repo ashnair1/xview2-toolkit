@@ -1,8 +1,16 @@
+"""Utility scripts for working with xView2 dataset."""
+
 import os
+
+import json
 
 from PIL import Image, ImageDraw
 
 import numpy as np
+
+import geojson
+import shapely.wkt
+from shapely.geometry import LineString
 
 
 def wkt2list(objwkts):
@@ -26,8 +34,6 @@ def wkt2list1(objwkts):
     :param objwkts (list): list of object wkts
     :returns: polygon coordinates as list of lists.
     """
-    import shapely.wkt
-    import geojson
     poly = [geojson.Feature(geometry=shapely.wkt.loads(wkt), properties={}).geometry['coordinates'] for wkt in objwkts]
     return poly
 
@@ -59,6 +65,26 @@ def get_object_polygons(anndf, ann, wkt_type="pixel", _type="wkt"):
         return wktlist, dmg
     else:
         return polylist, dmg
+
+
+def getboxwh(polygon):
+    """
+    Get the major and minor axis of a polygon's mrr.
+
+    :param polygon (Polygon): Shapely polygon
+    :return: major_axis, minor_axis
+    """
+    # get the minimum bounding rectangle and zip coordinates into a list of point-tuples
+    mbr_points = list(zip(*polygon.minimum_rotated_rectangle.exterior.coords.xy))
+
+    # calculate the length of each side of the minimum bounding rectangle
+    mbr_lengths = [LineString((mbr_points[i], mbr_points[i + 1])).length for i in range(len(mbr_points) - 1)]
+
+    # get major/minor axis measurements
+    minor_axis = round(min(mbr_lengths))
+    major_axis = round(max(mbr_lengths))
+
+    return major_axis, minor_axis
 
 
 def generate_segmap(anndf, ann):
@@ -100,3 +126,93 @@ def generate_segmap(anndf, ann):
         # Assert max dmg of bldg
         assert np.max(bg) <= 4
     return bg
+
+
+def generate_coco(predf, postdf):
+    """
+    Generate dataset in MS COCO format.
+
+    :param ann (str): location of annotation file to parse
+    :param df (pandas dataframe): pre or post annotation dataframe
+    :return: seg map (numpy array)
+    """
+    cat_field = [{'id': 1, 'name': 'no-damage'},
+                 {'id': 2, 'name': 'minor-damage'},
+                 {'id': 3, 'name': 'major-damage'},
+                 {'id': 4, 'name': 'destroyed'}]
+
+    # Create Image field
+    img_names = list(postdf.img_name.unique())
+    img_ids = [i for i in range(len(img_names))]
+    img_dict = dict(zip(img_names, img_ids))
+    width, height = 1024, 1024
+
+    img_field = []
+
+    for im_name, imid in img_dict.items():
+        im = {'id': imid, 'file_name': im_name, 'width': width, 'height': height}
+        img_field.append(im)
+
+    # Create annotation field
+
+    cat = {'no-damage': 1,
+           'minor-damage': 2,
+           'major-damage': 3,
+           'destroyed': 4}
+
+    ann_field = []
+
+    # Recreate annotation dataframe with polygons from pre & dmg class from post.
+
+    prdf = predf.copy()
+    podf = postdf.copy()
+
+    # Reset indices
+    prdf = prdf.reset_index(drop=True)
+    podf = podf.reset_index(drop=True)
+
+    podf['pixwkt'] = prdf['pixwkt']
+    podf['geowkt'] = prdf['geowkt']
+
+    for index, row in podf.iterrows():
+        ann_id = index
+        img_id = img_dict[row['img_name']]
+
+        pixwkt = str(row['pixwkt'])
+        poly = shapely.wkt.loads(pixwkt)
+        # Area
+        area = round(poly.area, 2)
+
+        # Category
+        dmg_cat = row['dmg_cat']
+        catid = cat[row['dmg_cat']]
+
+        # BBox
+        box = poly.minimum_rotated_rectangle
+        w, h = getboxwh(poly)
+        x, y = list(box.exterior.coords)[0]
+        bbox = [round(x, 2), round(y, 2), w, h]
+
+        # Segmentation Polygon
+        coord = geojson.Feature(geometry=poly)['geometry']['coordinates'][0]
+        seg = [int(round(item, 2)) for sublist in coord for item in sublist]
+
+        ann = {'id': ann_id,
+               'image_id': img_id,
+               'area': area,
+               'bbox': bbox,
+               'category_id': catid,
+               'category_name': dmg_cat,
+               'segmentation': seg,
+               }
+
+        ann_field.append(ann)
+
+    coco_ann = {'annotations': ann_field,
+                'categories': cat_field,
+                'images': img_field}
+
+    with open('xview2.json', 'w') as w:
+        json.dump(coco_ann, w)
+
+    print("COCO Conversion Complete")
