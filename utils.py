@@ -136,13 +136,20 @@ def generate_coco(predf, postdf):
     :param df (pandas dataframe): pre or post annotation dataframe
     :return: seg map (numpy array)
     """
+    info = {"description": "xView2 Building Damage Classification Dataset",
+            "url": "https://xview2.org/",
+            "version": "1.0",
+            "year": 2019,
+            "contributor": "Defense Innovation Unit (DIU)",
+            "date_created": "2019/09/25"}
+
     cat_field = [{'id': 1, 'name': 'no-damage'},
                  {'id': 2, 'name': 'minor-damage'},
                  {'id': 3, 'name': 'major-damage'},
                  {'id': 4, 'name': 'destroyed'}]
 
     # Create Image field
-    img_names = list(postdf.img_name.unique())
+    img_names = list(predf.img_name.unique())
     img_ids = [i for i in range(len(img_names))]
     img_dict = dict(zip(img_names, img_ids))
     width, height = 1024, 1024
@@ -154,7 +161,8 @@ def generate_coco(predf, postdf):
         img_field.append(im)
 
     # Create annotation field
-    cat = {'no-damage': 1,
+    cat = {'un-classified': 1,
+           'no-damage': 1,
            'minor-damage': 2,
            'major-damage': 3,
            'destroyed': 4}
@@ -170,10 +178,15 @@ def generate_coco(predf, postdf):
     prdf = prdf.reset_index(drop=True)
     podf = podf.reset_index(drop=True)
 
-    podf['pixwkt'] = prdf['pixwkt']
-    podf['geowkt'] = prdf['geowkt']
+    # If merging into postdf
+    # podf['pixwkt'] = prdf['pixwkt']
+    # podf['geowkt'] = prdf['geowkt']
 
-    for index, row in podf.iterrows():
+    # If merging into predf
+    prdf['dmg_cat'] = podf['dmg_cat']
+    prdf['dmg_cat'] = podf['dmg_cat']
+
+    for index, row in prdf.iterrows():
         ann_id = index
         img_id = img_dict[row['img_name']]
 
@@ -194,9 +207,10 @@ def generate_coco(predf, postdf):
 
         # Segmentation Polygon
         coord = geojson.Feature(geometry=poly)['geometry']['coordinates'][0]
-        seg = [int(round(item, 2)) for sublist in coord for item in sublist]
+        seg = [[int(round(item, 2)) for sublist in coord for item in sublist]]
 
         ann = {'id': ann_id,
+               'iscrowd': 0,
                'image_id': img_id,
                'area': area,
                'bbox': bbox,
@@ -209,7 +223,8 @@ def generate_coco(predf, postdf):
 
     coco_ann = {'annotations': ann_field,
                 'categories': cat_field,
-                'images': img_field}
+                'images': img_field,
+                'info': info}
 
     with open('xview2.json', 'w') as w:
         json.dump(coco_ann, w)

@@ -236,5 +236,5 @@ if __name__ == "__main__":
     xview = XView2(img_dir, lbl_dir)
     xview.show_anns('./data/train/labels/palu-tsunami_00000000_post_disaster.json')
     xview.view_pre_post('palu-tsunami', '00000000')
-    xview.generate_dmg_segmaps()
+    #xview.generate_dmg_segmaps()
     xview.generate_coco()
