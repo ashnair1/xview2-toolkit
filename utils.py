@@ -221,12 +221,12 @@ def generate_coco(predf, postdf):
 
         ann_field.append(ann)
 
-    coco_ann = {'annotations': ann_field,
+    trainval = {'annotations': ann_field,
                 'categories': cat_field,
                 'images': img_field,
                 'info': info}
 
     with open('xview2.json', 'w') as w:
-        json.dump(coco_ann, w)
+        json.dump(trainval, w)
 
     print("COCO Conversion Complete")
