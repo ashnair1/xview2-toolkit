@@ -1,7 +1,7 @@
 """Utility scripts for working with xView2 dataset."""
 
 import os
-
+import random
 import json
 
 from PIL import Image, ImageDraw
@@ -128,20 +128,21 @@ def generate_segmap(anndf, ann):
     return bg
 
 
-def generate_coco(predf, postdf):
+def generate_coco(predf, postdf, filename ='xview2'):
     """
     Generate dataset in MS COCO format.
 
-    :param ann (str): location of annotation file to parse
-    :param df (pandas dataframe): pre or post annotation dataframe
-    :return: seg map (numpy array)
+    :param predf (pandas dataframe): pre disaster annotation dataframe
+    :param postdf (pandas dataframe): post disaster annotation dataframe
+    :param filename (string): name of annotation file
+    :return: None
     """
     info = {"description": "xView2 Building Damage Classification Dataset",
             "url": "https://xview2.org/",
             "version": "1.0",
             "year": 2019,
             "contributor": "Defense Innovation Unit (DIU)",
-            "date_created": "2019/09/25"}
+            "date_created": "2019/10/25"}
 
     cat_field = [{'id': 1, 'name': 'no-damage'},
                  {'id': 2, 'name': 'minor-damage'},
@@ -221,12 +222,56 @@ def generate_coco(predf, postdf):
 
         ann_field.append(ann)
 
-    trainval = {'annotations': ann_field,
-                'categories': cat_field,
-                'images': img_field,
-                'info': info}
+    coco = {'annotations': ann_field,
+            'categories': cat_field,
+            'images': img_field,
+            'info': info}
 
-    with open('xview2.json', 'w') as w:
-        json.dump(trainval, w)
+    with open(filename + ".json", 'w') as w:
+        json.dump(coco, w)
 
     print("COCO Conversion Complete")
+
+
+def generate_coco_split(predf, postdf, split=0.7):
+    """
+    Generate dataset in MS COCO format.
+
+    :param predf (pandas dataframe): pre disaster annotation dataframe
+    :param postdf (pandas dataframe): post disaster annotation dataframe
+    :param split (float): train-val split
+    :return: None
+    """
+
+    # Split pre-disaster dataframe
+    pre = predf['img_name'].unique()
+    pre_train = random.sample(list(pre), int(split * len(pre)))
+    pre_val = list(set(pre) - set(pre_train))
+    train_pre_df = predf[predf['img_name'].isin(pre_train)]
+    val_pre_df = predf[predf['img_name'].isin(pre_val)]
+    # Reset indices
+    train_pre_df = train_pre_df.reset_index(drop=True)
+    val_pre_df = val_pre_df.reset_index(drop=True)
+    assert len(predf) == len(train_pre_df) + len(val_pre_df)
+
+    # Split post-disaster dataframe
+    post = postdf['img_name'].unique()
+    post_train = []
+    for i in pre_train:
+        nl = i.split('_')
+        nn = '_'.join(['post' if x == 'pre' else x for x in nl])
+        post_train.append(nn)
+    post_val = list(set(post) - set(post_train))
+    train_post_df = postdf[postdf['img_name'].isin(post_train)]
+    val_post_df = postdf[postdf['img_name'].isin(post_val)]
+
+    # Reset indices
+    train_post_df = train_post_df.reset_index(drop=True)
+    val_post_df = val_post_df.reset_index(drop=True)
+    assert len(postdf) == len(train_post_df) + len(val_post_df)
+
+    # Create MS-COCO train val annotations
+    print("Processing train split")
+    generate_coco(train_pre_df, train_post_df, "train")
+    print("Processing val split")
+    generate_coco(val_pre_df, val_post_df, "val")

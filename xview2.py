@@ -18,7 +18,7 @@ from tqdm import tqdm
 import utils
 
 
-class XView2():
+class XView2:
     def __init__(self, img_dir, lbl_dir):
         """
         Constructor of xView helper class for reading, parsing & visualising annotations.
@@ -117,13 +117,20 @@ class XView2():
             im = Image.fromarray(segmap)
             im.save(os.path.join(self.seg_dir, os.path.basename(j)[:-5]) + ".png")
 
-    def generate_coco(self):
+    def generate_coco(self, split=1.0):
         """
         Convert annotations to MS-COCO format.
 
         :return: None
         """
-        utils.generate_coco(self.pre_dist_df, self.post_dist_df)
+        assert split <= 1.0, "Invalid split"
+
+        if split == 1.0:
+            # No split
+            utils.generate_coco(self.pre_dist_df, self.post_dist_df)
+        else:
+            # Perform split -> train = split, val = (1 - split)
+            utils.generate_coco_split(self.pre_dist_df, self.post_dist_df, split)
 
     def pre_post_split(self):
         """
@@ -229,12 +236,13 @@ class XView2():
 
 
 if __name__ == "__main__":
-    data_dir = "./data"
-    folder = "train"
+    data_dir = "../datasets/xview2"
+    folder = "mini"
     img_dir = os.path.join(data_dir, folder, 'images')
     lbl_dir = os.path.join(data_dir, folder, 'labels')
     xview = XView2(img_dir, lbl_dir)
-    xview.show_anns('./data/train/labels/palu-tsunami_00000000_post_disaster.json')
-    xview.view_pre_post('palu-tsunami', '00000000')
+    xview.show_anns('../datasets/xview2/mini/labels/palu-tsunami_00000001_post_disaster.json')
+    xview.view_pre_post('palu-tsunami', '00000001')
     #xview.generate_dmg_segmaps()
     xview.generate_coco()
+    #xview.generate_coco(0.6)
