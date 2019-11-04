@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import shutil
 import time
 
@@ -98,12 +99,14 @@ class XView2:
         anndf = pd.concat(ann_list, ignore_index=True)
         return anndf
 
-    def generate_dmg_segmaps(self):
+    def generate_dmg_segmaps(self, split=1.0):
         """
         Generate segmentation maps for dataset.
 
         :return: None
         """
+        assert split <= 1.0, "Invalid split"
+
         self.seg_dir = os.path.join(os.path.dirname(self.img_dir), 'cls_segmaps')
         # Create segementation directory
         if os.path.exists(self.seg_dir) is False:
@@ -112,10 +115,53 @@ class XView2:
             shutil.rmtree(self.seg_dir)
             os.mkdir(self.seg_dir)
 
-        for j in tqdm(self.jsons):
+        # Create split directories
+        tseg_dir = os.path.join(self.seg_dir, 'train')
+        vseg_dir = os.path.join(self.seg_dir, 'val')
+
+        if os.path.exists(tseg_dir) is False:
+            os.mkdir(tseg_dir)
+            os.mkdir(vseg_dir)
+        else:
+            shutil.rmtree(tseg_dir)
+            shutil.rmtree(vseg_dir)
+            os.mkdir(tseg_dir)
+            os.mkdir(vseg_dir)
+
+        # Get names i.e. palu-tsuname_000001
+        _ids = set(['_'.join(os.path.basename(i).split('_')[0:2]) for i in self.jsons])
+        t_ids = random.sample(_ids, int(split * len(_ids)))
+        v_ids = list(set(_ids) - set(t_ids))
+
+        train_jsons = []
+        val_jsons = []
+
+        pre_ext = "_pre_disaster.json"
+        post_ext = "_post_disaster.json"
+        json_dir = os.path.dirname(self.jsons[0])
+
+        for tj in t_ids:
+            pre_path = os.path.join(json_dir, tj + pre_ext)
+            post_path = os.path.join(json_dir, tj + post_ext)
+            train_jsons.append(pre_path)
+            train_jsons.append(post_path)
+        for vj in v_ids:
+            pre_path = os.path.join(json_dir, vj + pre_ext)
+            post_path = os.path.join(json_dir, vj + post_ext)
+            val_jsons.append(pre_path)
+            val_jsons.append(post_path)
+
+        assert len(self.jsons) == len(train_jsons) + len(val_jsons)
+
+        for j in tqdm(train_jsons):
             segmap = utils.generate_segmap(self.anndf, j)
             im = Image.fromarray(segmap)
-            im.save(os.path.join(self.seg_dir, os.path.basename(j)[:-5]) + ".png")
+            im.save(os.path.join(tseg_dir, os.path.basename(j)[:-5]) + ".png")
+
+        for j in tqdm(val_jsons):
+            segmap = utils.generate_segmap(self.anndf, j)
+            im = Image.fromarray(segmap)
+            im.save(os.path.join(vseg_dir, os.path.basename(j)[:-5]) + ".png")
 
     def generate_coco(self, split=1.0):
         """
@@ -127,10 +173,10 @@ class XView2:
 
         if split == 1.0:
             # No split
-            utils.generate_coco(self.pre_dist_df, self.post_dist_df)
+            utils.generate_coco(self.predf, self.postdf)
         else:
             # Perform split -> train = split, val = (1 - split)
-            utils.generate_coco_split(self.pre_dist_df, self.post_dist_df, split)
+            utils.generate_coco_split(self.predf, self.postdf, split)
 
     def pre_post_split(self):
         """
@@ -138,28 +184,28 @@ class XView2:
 
         :return: pre disaster and post disaster dataframes
         """
-        self.pre_dist_df = self.anndf.loc[self.anndf["type"] == 'pre']
-        self.post_dist_df = self.anndf.loc[self.anndf["type"] == 'post']
-        return self.pre_dist_df, self.post_dist_df
+        self.predf = self.anndf.loc[self.anndf["type"] == 'pre']
+        self.postdf = self.anndf.loc[self.anndf["type"] == 'post']
+        return self.predf, self.postdf
 
     def view_pre_post(self, disaster="guatemala-volcano", imid="00000000"):
         """
         Visualise the effect of a disaster via pre and post disaster images.
 
-        :param disaster (str): Disaster name from the following list:
+        :param disaster: Disaster name from the following list:
         ['guatemala-volcano', 'hurricane-florence', 'hurricane-harvey',
         'hurricane-matthew', 'hurricane-michael', 'mexico-earthquake',
         'midwest-flooding', 'palu-tsunami', 'santa-rosa-wildfire','socal-fire']
 
-        :param imid (str): img id
+        :param imid: img id
         :return: None
         """
         assert disaster in self.anndf.disaster.unique()
 
-        pre_df = self.pre_dist_df[(self.pre_dist_df['img_id'] == imid) &
-                                  (self.pre_dist_df['disaster'] == disaster)]
-        post_df = self.post_dist_df[(self.post_dist_df['img_id'] == imid) &
-                                    (self.post_dist_df['disaster'] == disaster)]
+        pre_df = self.predf[(self.predf['img_id'] == imid) &
+                            (self.predf['disaster'] == disaster)]
+        post_df = self.postdf[(self.postdf['img_id'] == imid) &
+                              (self.postdf['disaster'] == disaster)]
 
         assert len(pre_df) + len(post_df) == len(self.anndf[(self.anndf['disaster'] == disaster) & (self.anndf['img_id'] == imid)])
 
@@ -243,6 +289,5 @@ if __name__ == "__main__":
     xview = XView2(img_dir, lbl_dir)
     xview.show_anns('../datasets/xview2/mini/labels/palu-tsunami_00000001_post_disaster.json')
     xview.view_pre_post('palu-tsunami', '00000001')
-    #xview.generate_dmg_segmaps()
-    xview.generate_coco()
-    #xview.generate_coco(0.6)
+    xview.generate_dmg_segmaps(0.8)
+    xview.generate_coco(0.8)

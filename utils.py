@@ -42,8 +42,8 @@ def get_object_polygons(anndf, ann, wkt_type="pixel", _type="wkt"):
     """
     Return object polygons & damage status.
 
-    :param ann (str): location of annotation file to parse
-    :param anndf (pandas dataframe): annotation dataframe
+    :param ann: location of annotation file to parse
+    :param anndf: annotation dataframe
     :param wkt_type (str): wkt version to be returned (pixel or geo)
     :param _type (str): format of polygons to be returned (wkt or list of lists)
     :return: polygon list & dmg rating list
@@ -71,7 +71,7 @@ def getboxwh(polygon):
     """
     Get the major and minor axis of a polygon's mrr.
 
-    :param polygon (Polygon): Shapely polygon
+    :param polygon: Shapely polygon
     :return: major_axis, minor_axis
     """
     # get the minimum bounding rectangle and zip coordinates into a list of point-tuples
@@ -96,8 +96,8 @@ def generate_segmap(anndf, ann):
 
     Note: 'none' indicates its a pre disaster annotation.
 
-    :param ann (str): location of annotation file to parse
-    :param anndf (pandas dataframe): annotation dataframe
+    :param ann: location of annotation file to parse
+    :param anndf: annotation dataframe
     :return: seg map (numpy array)
     """
     dmg_dict = {'none': 1,
@@ -132,9 +132,9 @@ def generate_coco(predf, postdf, filename ='xview2'):
     """
     Generate dataset in MS COCO format.
 
-    :param predf (pandas dataframe): pre disaster annotation dataframe
-    :param postdf (pandas dataframe): post disaster annotation dataframe
-    :param filename (string): name of annotation file
+    :param predf: pre disaster annotation dataframe
+    :param postdf: post disaster annotation dataframe
+    :param filename: name of annotation file
     :return: None
     """
     info = {"description": "xView2 Building Damage Classification Dataset",
@@ -237,12 +237,12 @@ def generate_coco_split(predf, postdf, split=0.7):
     """
     Generate dataset in MS COCO format.
 
-    :param predf (pandas dataframe): pre disaster annotation dataframe
-    :param postdf (pandas dataframe): post disaster annotation dataframe
-    :param split (float): train-val split
+    :param predf: pre disaster annotation dataframe
+    :param postdf: post disaster annotation dataframe
+    :param split: train-val split
+    :type split: float
     :return: None
     """
-
     # Split pre-disaster dataframe
     pre = predf['img_name'].unique()
     pre_train = random.sample(list(pre), int(split * len(pre)))
