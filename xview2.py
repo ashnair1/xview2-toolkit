@@ -63,8 +63,13 @@ class XView2:
 
         :return: anndf (pandas DataFrame)
         """
+        # Remove text file
+        skipfile = "./skipped.txt"
+        if os.path.exists(skipfile):
+            os.remove(skipfile)
+
         ann_list = []
-        for ann in self.anndict.values():
+        for k, ann in self.anndict.items():
             # Get features
             feature_type = []
             uids = []
@@ -74,28 +79,40 @@ class XView2:
             imids = []
             types = []
 
-            for i in ann['features']['xy']:
-                feature_type.append(i['properties']['feature_type'])
-                uids.append(i['properties']['uid'])
-                pixwkts.append(i['wkt'])
-                if 'subtype' in list(i['properties'].keys()):
-                    dmg_cats.append(i['properties']['subtype'])
+            if ann['features']['xy']:
+                for i in ann['features']['xy']:
+                    feature_type.append(i['properties']['feature_type'])
+                    uids.append(i['properties']['uid'])
+                    pixwkts.append(i['wkt'])
+                    if 'subtype' in list(i['properties'].keys()):
+                        dmg_cats.append(i['properties']['subtype'])
+                    else:
+                        dmg_cats.append("none")
+                    imids.append(ann['metadata']['img_name'].split('_')[1])
+                    types.append(ann['metadata']['img_name'].split('_')[2])
+
+                for i in ann['features']['lng_lat']:
+                    geowkts.append(i['wkt'])
+
+                # Get Metadata
+                cols = list(ann['metadata'].keys())
+                vals = list(ann['metadata'].values())
+
+                newcols = ['obj_type', 'img_id', 'type', 'pixwkt', 'geowkt', 'dmg_cat', 'uid'] + cols
+                newvals = [[f, _id, t, pw, gw, dmg, u] + vals for f, _id, t, pw, gw, dmg, u in
+                           zip(feature_type, imids, types, pixwkts, geowkts, dmg_cats, uids)]
+                df = pd.DataFrame(newvals, columns=newcols)
+                ann_list.append(df)
+            else:
+                # Skip images with no annotations
+                if os.path.exists(skipfile):
+                    append_write = 'a'  # append if already exists
                 else:
-                    dmg_cats.append("none")
-                imids.append(ann['metadata']['img_name'].split('_')[1])
-                types.append(ann['metadata']['img_name'].split('_')[2])
+                    append_write = 'w'  # make a new file if not
 
-            for i in ann['features']['lng_lat']:
-                geowkts.append(i['wkt'])
-
-            # Get Metadata
-            cols = list(ann['metadata'].keys())
-            vals = list(ann['metadata'].values())
-
-            newcols = ['obj_type', 'img_id', 'type', 'pixwkt', 'geowkt', 'dmg_cat', 'uid'] + cols
-            newvals = [[f, _id, t, pw, gw, dmg, u] + vals for f, _id, t, pw, gw, dmg, u in zip(feature_type, imids, types, pixwkts, geowkts, dmg_cats, uids)]
-            df = pd.DataFrame(newvals, columns=newcols)
-            ann_list.append(df)
+                skipped = open(skipfile, append_write)
+                skipped.write(os.path.basename(k) + '\n')
+                skipped.close()
         anndf = pd.concat(ann_list, ignore_index=True)
         return anndf
 
@@ -171,12 +188,20 @@ class XView2:
         """
         assert split <= 1.0, "Invalid split"
 
+        # Create a coco directory
+        coco_dir = "./coco"
+        if os.path.exists(coco_dir):
+            shutil.rmtree(coco_dir)
+            os.mkdir(coco_dir)
+        else:
+            os.mkdir(coco_dir)
+
         if split == 1.0:
             # No split
-            utils.generate_coco(self.predf, self.postdf)
+            utils.generate_coco(self.predf, self.postdf, coco_dir)
         else:
             # Perform split -> train = split, val = (1 - split)
-            utils.generate_coco_split(self.predf, self.postdf, split)
+            utils.generate_coco_split(self.predf, self.postdf, split, coco_dir)
 
     def pre_post_split(self):
         """
@@ -282,12 +307,12 @@ class XView2:
 
 
 if __name__ == "__main__":
-    data_dir = "../datasets/xview2"
+    data_dir = "./data"
     folder = "mini"
     img_dir = os.path.join(data_dir, folder, 'images')
     lbl_dir = os.path.join(data_dir, folder, 'labels')
     xview = XView2(img_dir, lbl_dir)
-    xview.show_anns('../datasets/xview2/mini/labels/palu-tsunami_00000001_post_disaster.json')
-    xview.view_pre_post('palu-tsunami', '00000001')
-    xview.generate_dmg_segmaps(0.8)
-    xview.generate_coco(0.8)
+    #xview.show_anns('./data/mini/labels/palu-tsunami_00000001_post_disaster.json')
+    #xview.view_pre_post('palu-tsunami', '00000001')
+    #xview.generate_dmg_segmaps(0.8)
+    xview.generate_coco(0.75)

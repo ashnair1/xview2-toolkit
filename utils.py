@@ -128,13 +128,14 @@ def generate_segmap(anndf, ann):
     return bg
 
 
-def generate_coco(predf, postdf, filename ='xview2'):
+def generate_coco(predf, postdf, filename ='xview2', coco_dir="./coco"):
     """
     Generate dataset in MS COCO format.
 
     :param predf: pre disaster annotation dataframe
     :param postdf: post disaster annotation dataframe
     :param filename: name of annotation file
+    :param coco_dir: directory to store coco annotations
     :return: None
     """
     info = {"description": "xView2 Building Damage Classification Dataset",
@@ -227,13 +228,15 @@ def generate_coco(predf, postdf, filename ='xview2'):
             'images': img_field,
             'info': info}
 
-    with open(filename + ".json", 'w') as w:
+    dest = os.path.join(coco_dir, filename + ".json")
+
+    with open(dest, 'w') as w:
         json.dump(coco, w)
 
     print("COCO Conversion Complete")
 
 
-def generate_coco_split(predf, postdf, split=0.7):
+def generate_coco_split(predf, postdf, split=0.7, coco_dir="./coco"):
     """
     Generate dataset in MS COCO format.
 
@@ -241,6 +244,7 @@ def generate_coco_split(predf, postdf, split=0.7):
     :param postdf: post disaster annotation dataframe
     :param split: train-val split
     :type split: float
+    :param coco_dir: directory to store coco annotations
     :return: None
     """
     # Split pre-disaster dataframe
@@ -253,6 +257,16 @@ def generate_coco_split(predf, postdf, split=0.7):
     train_pre_df = train_pre_df.reset_index(drop=True)
     val_pre_df = val_pre_df.reset_index(drop=True)
     assert len(predf) == len(train_pre_df) + len(val_pre_df)
+
+    # Write train-val split to txt file
+    t = open(os.path.join(coco_dir, 'train.txt'), 'w')
+    for i in train_pre_df.img_name.unique():
+        t.write(i + '\n')
+    t.close()
+    v = open(os.path.join(coco_dir, 'val.txt'), 'w')
+    for j in val_pre_df.img_name.unique():
+        v.write(j + '\n')
+    v.close()
 
     # Split post-disaster dataframe
     post = postdf['img_name'].unique()
@@ -272,6 +286,6 @@ def generate_coco_split(predf, postdf, split=0.7):
 
     # Create MS-COCO train val annotations
     print("Processing train split")
-    generate_coco(train_pre_df, train_post_df, "train")
+    generate_coco(train_pre_df, train_post_df, "train", coco_dir)
     print("Processing val split")
-    generate_coco(val_pre_df, val_post_df, "val")
+    generate_coco(val_pre_df, val_post_df, "val", coco_dir)
