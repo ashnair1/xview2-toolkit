@@ -31,11 +31,39 @@ def wkt2list1(objwkts):
     Convert object pixel coordinates from wkt to list of lists.
 
     Heavy duty version utilising shapely & geojson libraries
-    :param objwkts (list): list of object wkts
+    :param objwkts: list of object wkts
     :returns: polygon coordinates as list of lists.
     """
     poly = [geojson.Feature(geometry=shapely.wkt.loads(wkt), properties={}).geometry['coordinates'] for wkt in objwkts]
     return poly
+
+
+def get_hbbox(poly):
+    """
+    Return minimum bounding horizontal bounding box
+    :param poly: Shapely polygon
+    :return:box: [x, y, w, h]
+    """
+    x, y = poly.exterior.coords.xy
+    xmax = np.max(x)
+    xmin = np.min(x)
+    ymax = np.max(y)
+    ymin = np.min(y)
+    width = xmax - xmin
+    height = ymax - ymin
+    box = [round(xmin, 2), round(ymin, 2), width, height]
+    return box
+
+
+def get_rbbox(poly):
+    """
+    Return minimum bounding rotated bounding box
+    :param poly: Shapely polygon
+    :return:rbox: list of coordinates
+    """
+    rbox = poly.minimum_rotated_rectangle
+    rbox = rbox.exterior.coords
+    return rbox
 
 
 def get_object_polygons(anndf, ann, wkt_type="pixel", _type="wkt"):
@@ -202,10 +230,7 @@ def generate_coco(predf, postdf, filename ='xview2', coco_dir="./coco"):
         catid = cat[row['dmg_cat']]
 
         # BBox
-        box = poly.minimum_rotated_rectangle
-        w, h = getboxwh(poly)
-        x, y = list(box.exterior.coords)[0]
-        bbox = [round(x, 2), round(y, 2), w, h]
+        bbox = get_hbbox(poly)
 
         # Segmentation Polygon
         coord = geojson.Feature(geometry=poly)['geometry']['coordinates'][0]

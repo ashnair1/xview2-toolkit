@@ -315,4 +315,4 @@ if __name__ == "__main__":
     #xview.show_anns('./data/mini/labels/palu-tsunami_00000001_post_disaster.json')
     #xview.view_pre_post('palu-tsunami', '00000001')
     #xview.generate_dmg_segmaps(0.8)
-    xview.generate_coco(0.75)
+    xview.generate_coco(0.8)
