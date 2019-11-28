@@ -148,7 +148,7 @@ def generate_segmap(anndf, ann):
     for p, d in zip(plist, dmg):
         polygon = [(coord[0], coord[1]) for coord in p[0]]
         img = Image.new('L', (width, height), 0)
-        ImageDraw.Draw(img).polygon(polygon, outline=dmg_dict[d], fill=dmg_dict[d])
+        ImageDraw.Draw(img).polygon(polygon, fill=dmg_dict[d])
         mask = np.array(img)
         bg = np.maximum(bg, mask)
         # Assert max dmg of bldg

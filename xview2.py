@@ -8,6 +8,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
 
+import numpy as np
 import pandas as pd
 
 from PIL import Image
@@ -145,6 +146,14 @@ class XView2:
             os.mkdir(tseg_dir)
             os.mkdir(vseg_dir)
 
+        colourmap = np.array([(0, 0, 0),        # Background
+                              (255, 255, 255),  # No Damage
+                              (18, 127, 15),    # Minor Damage
+                              (100, 100, 0),    # Major Damage
+                              (255, 0, 0)])     # Destroyed
+
+        assert colourmap.shape == (5, 3)
+
         # Get names i.e. palu-tsuname_000001
         _ids = set(['_'.join(os.path.basename(i).split('_')[0:2]) for i in self.jsons])
         t_ids = random.sample(_ids, int(split * len(_ids)))
@@ -173,11 +182,13 @@ class XView2:
         for j in tqdm(train_jsons):
             segmap = utils.generate_segmap(self.anndf, j)
             im = Image.fromarray(segmap)
+            im.putpalette(colourmap.astype(np.uint8))
             im.save(os.path.join(tseg_dir, os.path.basename(j)[:-5]) + ".png")
 
         for j in tqdm(val_jsons):
             segmap = utils.generate_segmap(self.anndf, j)
             im = Image.fromarray(segmap)
+            im.putpalette(colourmap.astype(np.uint8))
             im.save(os.path.join(vseg_dir, os.path.basename(j)[:-5]) + ".png")
 
     def generate_coco(self, split=1.0):
