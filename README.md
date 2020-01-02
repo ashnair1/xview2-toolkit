@@ -14,20 +14,28 @@ A test dataset (2.6 GB, GZIP archive) is also provided for the purposes of compe
 
 The toolkit allows for the following:
 
-1. Visualise annotations (single and pre-post comparitive view)
+#### 1. Visualise annotations (single and pre-post comparitive view)
 
-<img src="./rep_stuff/single_view.png" alt="single" width=210 /> 
-<img src="./rep_stuff/comparitive_view.png" alt="comparitive" width=210 /> 
+a. Single View
+<p align="center">
+  <img src="./rep_stuff/single_view.png" alt="single" width=410 /> 
+</p>
 
-2. Converts annotations into segmentation maps for semantic segmentation.
+b. Comparitive View
+<p align="center">
+  <img src="./rep_stuff/comparitive_view.png" alt="comparitive" width=710 /> 
+</p>
+
+#### 2. Converts annotations into MS-COCO annotations for instance segmentation.
+
+#### 3. Converts annotations into segmentation maps for semantic segmentation.
 
 |                            Pre                                             |                                               Post                                      		      |   
 |----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| <img src="./rep_stuff/palu-tsunami_00000001_pre_disaster_seg.png" alt="pre" alt="pre" width=210 />   |  <img src="./rep_stuff/palu-tsunami_00000001_post_disaster_seg.png" alt="post" title="post" width=210 /> |
-
-3. Converts annotations into MS-COCO annotations for instance segmentation.
+| <img src="./rep_stuff/palu-tsunami_00000001_pre_disaster_seg.png" alt="pre" alt="pre" width=410 />   |  <img src="./rep_stuff/palu-tsunami_00000001_post_disaster_seg.png" alt="post" title="post" width=410 /> |
 
 
-# Todo
+
+### Todo
 
 1. Add evaluator.
