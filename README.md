@@ -14,7 +14,7 @@ A test dataset (2.6 GB, GZIP archive) is also provided for the purposes of compe
 
 The toolkit allows for the following:
 
-#### 1. Visualise annotations (single and pre-post comparitive view)
+#### 1. Visualise annotations
 
 a. Single View
 <p align="center">
