@@ -149,7 +149,7 @@ class XView2:
         colourmap = np.array([(0, 0, 0),        # Background
                               (255, 255, 255),  # No Damage
                               (18, 127, 15),    # Minor Damage
-                              (100, 100, 0),    # Major Damage
+                              (255, 170, 0),    # Major Damage
                               (255, 0, 0)])     # Destroyed
 
         assert colourmap.shape == (5, 3)
