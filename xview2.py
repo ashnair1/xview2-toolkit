@@ -71,16 +71,15 @@ class XView2:
 
         ann_list = []
         for k, ann in self.anndict.items():
-            # Get features
-            feature_type = []
-            uids = []
-            pixwkts = []
-            geowkts = []
-            dmg_cats = []
-            imids = []
-            types = []
-
             if ann['features']['xy']:
+                # Get features
+                feature_type = []
+                uids = []
+                pixwkts = []
+                dmg_cats = []
+                imids = []
+                types = []
+
                 for i in ann['features']['xy']:
                     feature_type.append(i['properties']['feature_type'])
                     uids.append(i['properties']['uid'])
@@ -92,9 +91,7 @@ class XView2:
                     imids.append(ann['metadata']['img_name'].split('_')[1])
                     types.append(ann['metadata']['img_name'].split('_')[2])
 
-                for i in ann['features']['lng_lat']:
-                    geowkts.append(i['wkt'])
-
+                geowkts = [i['wkt'] for i in ann['features']['lng_lat']]
                 # Get Metadata
                 cols = list(ann['metadata'].keys())
                 vals = list(ann['metadata'].values())
@@ -106,16 +103,10 @@ class XView2:
                 ann_list.append(df)
             else:
                 # Skip images with no annotations
-                if os.path.exists(skipfile):
-                    append_write = 'a'  # append if already exists
-                else:
-                    append_write = 'w'  # make a new file if not
-
-                skipped = open(skipfile, append_write)
-                skipped.write(os.path.basename(k) + '\n')
-                skipped.close()
-        anndf = pd.concat(ann_list, ignore_index=True)
-        return anndf
+                append_write = 'a' if os.path.exists(skipfile) else 'w'
+                with open(skipfile, append_write) as skipped:
+                    skipped.write(os.path.basename(k) + '\n')
+        return pd.concat(ann_list, ignore_index=True)
 
     def generate_dmg_segmaps(self, split=1.0):
         """
@@ -126,26 +117,18 @@ class XView2:
         assert split <= 1.0, "Invalid split"
 
         self.seg_dir = os.path.join(os.path.dirname(self.img_dir), 'cls_segmaps')
-        # Create segementation directory
-        if os.path.exists(self.seg_dir) is False:
-            os.mkdir(self.seg_dir)
-        else:
+        if os.path.exists(self.seg_dir) is not False:
             shutil.rmtree(self.seg_dir)
-            os.mkdir(self.seg_dir)
-
+        os.mkdir(self.seg_dir)
         # Create split directories
         tseg_dir = os.path.join(self.seg_dir, 'train')
         vseg_dir = os.path.join(self.seg_dir, 'val')
 
-        if os.path.exists(tseg_dir) is False:
-            os.mkdir(tseg_dir)
-            os.mkdir(vseg_dir)
-        else:
+        if os.path.exists(tseg_dir) is not False:
             shutil.rmtree(tseg_dir)
             shutil.rmtree(vseg_dir)
-            os.mkdir(tseg_dir)
-            os.mkdir(vseg_dir)
-
+        os.mkdir(tseg_dir)
+        os.mkdir(vseg_dir)
         colourmap = np.array([(0, 0, 0),        # Background
                               (255, 255, 255),  # No Damage
                               (18, 127, 15),    # Minor Damage
@@ -155,7 +138,7 @@ class XView2:
         assert colourmap.shape == (5, 3)
 
         # Get names i.e. palu-tsuname_000001
-        _ids = set(['_'.join(os.path.basename(i).split('_')[0:2]) for i in self.jsons])
+        _ids = {'_'.join(os.path.basename(i).split('_')[0:2]) for i in self.jsons}
         t_ids = random.sample(_ids, int(split * len(_ids)))
         v_ids = list(set(_ids) - set(t_ids))
 
@@ -203,10 +186,7 @@ class XView2:
         coco_dir = "./coco"
         if os.path.exists(coco_dir):
             shutil.rmtree(coco_dir)
-            os.mkdir(coco_dir)
-        else:
-            os.mkdir(coco_dir)
-
+        os.mkdir(coco_dir)
         if split == 1.0:
             # No split
             utils.generate_coco(self.predf, self.postdf, coco_dir)
@@ -254,13 +234,13 @@ class XView2:
         axes[1].imshow(post_im)
 
         # Get pre-disaster building polygons
-        for index, row in pre_df.iterrows():
+        for _, row in pre_df.iterrows():
             poly = shapely.wkt.loads(row['pixwkt'])
             dmg_stat = row['dmg_cat']
             axes[0].plot(*poly.exterior.xy, color='c')
 
         # Get post-disaster building polygons
-        for index, row in post_df.iterrows():
+        for _, row in post_df.iterrows():
             poly = shapely.wkt.loads(row['pixwkt'])
             dmg_stat = row['dmg_cat']
             axes[1].plot(*poly.exterior.xy, color=self.colordict[dmg_stat])

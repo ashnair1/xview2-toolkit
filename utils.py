@@ -22,8 +22,10 @@ def wkt2list(objwkts):
     """
     import geodaisy.converters as convert
     import ast
-    poly = [ast.literal_eval(convert.wkt_to_geojson(wkt))['coordinates'] for wkt in objwkts]
-    return poly
+    return [
+        ast.literal_eval(convert.wkt_to_geojson(wkt))['coordinates']
+        for wkt in objwkts
+    ]
 
 
 def wkt2list1(objwkts):
@@ -34,8 +36,12 @@ def wkt2list1(objwkts):
     :param objwkts: list of object wkts
     :returns: polygon coordinates as list of lists.
     """
-    poly = [geojson.Feature(geometry=shapely.wkt.loads(wkt), properties={}).geometry['coordinates'] for wkt in objwkts]
-    return poly
+    return [
+        geojson.Feature(
+            geometry=shapely.wkt.loads(wkt), properties={}
+        ).geometry['coordinates']
+        for wkt in objwkts
+    ]
 
 
 def get_hbbox(poly):
@@ -51,8 +57,7 @@ def get_hbbox(poly):
     ymin = np.min(y)
     width = xmax - xmin
     height = ymax - ymin
-    box = [round(xmin, 2), round(ymin, 2), width, height]
-    return box
+    return [round(xmin, 2), round(ymin, 2), width, height]
 
 
 def get_rbbox(poly):
@@ -283,22 +288,18 @@ def generate_coco_split(predf, postdf, split=0.7, coco_dir="./coco"):
     val_pre_df = val_pre_df.reset_index(drop=True)
     assert len(predf) == len(train_pre_df) + len(val_pre_df)
 
-    # Write train-val split to txt file
-    t = open(os.path.join(coco_dir, 'train.txt'), 'w')
-    for i in train_pre_df.img_name.unique():
-        t.write(i + '\n')
-    t.close()
-    v = open(os.path.join(coco_dir, 'val.txt'), 'w')
-    for j in val_pre_df.img_name.unique():
-        v.write(j + '\n')
-    v.close()
-
+    with open(os.path.join(coco_dir, 'train.txt'), 'w') as t:
+        for i in train_pre_df.img_name.unique():
+            t.write(i + '\n')
+    with open(os.path.join(coco_dir, 'val.txt'), 'w') as v:
+        for j in val_pre_df.img_name.unique():
+            v.write(j + '\n')
     # Split post-disaster dataframe
     post = postdf['img_name'].unique()
     post_train = []
     for i in pre_train:
         nl = i.split('_')
-        nn = '_'.join(['post' if x == 'pre' else x for x in nl])
+        nn = '_'.join('post' if x == 'pre' else x for x in nl)
         post_train.append(nn)
     post_val = list(set(post) - set(post_train))
     train_post_df = postdf[postdf['img_name'].isin(post_train)]

@@ -1,0 +1,8 @@
+geodaisy
+matplotlib
+numpy
+Pillow
+pandas
+shapely
+tqdm
+

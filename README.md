@@ -18,12 +18,12 @@ The toolkit allows for the following:
 
 a. Single View
 <p align="center">
-  <img src="./rep_stuff/single_view.png" alt="single" width=410 /> 
+  <img src=".github/single_view.png" alt="single" width=410 /> 
 </p>
 
 b. Comparitive View
 <p align="center">
-  <img src="./rep_stuff/comparitive_view.png" alt="comparitive" width=710 /> 
+  <img src=".github/comparitive_view.png" alt="comparitive" width=710 /> 
 </p>
 
 #### 2. Converts annotations into MS-COCO annotations for instance segmentation.
@@ -32,7 +32,7 @@ b. Comparitive View
 
 |                            Pre                                             |                                               Post                                      		      |   
 |----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| <img src="./rep_stuff/palu-tsunami_00000001_pre_disaster_seg.png" alt="pre" alt="pre" width=410 />   |  <img src="./rep_stuff/palu-tsunami_00000001_post_disaster_seg.png" alt="post" title="post" width=410 /> |
+| <img src=".github/palu-tsunami_00000001_pre_disaster_seg.png" alt="pre" alt="pre" width=410 />   |  <img src=".github/palu-tsunami_00000001_post_disaster_seg.png" alt="post" title="post" width=410 /> |
 
 
 
