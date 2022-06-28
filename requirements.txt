@@ -1,4 +1,5 @@
 geodaisy
+geojson
 matplotlib
 numpy
 Pillow
