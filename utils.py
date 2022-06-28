@@ -184,7 +184,7 @@ def generate_coco(predf, postdf, filename ='xview2', coco_dir="./coco"):
                  {'id': 4, 'name': 'destroyed'}]
 
     # Create Image field
-    img_names = list(predf.img_name.unique())
+    img_names = list(postdf.img_name.unique())
     img_ids = [i for i in range(len(img_names))]
     img_dict = dict(zip(img_names, img_ids))
     width, height = 1024, 1024
@@ -221,7 +221,7 @@ def generate_coco(predf, postdf, filename ='xview2', coco_dir="./coco"):
     prdf['dmg_cat'] = podf['dmg_cat']
     prdf['dmg_cat'] = podf['dmg_cat']
 
-    for index, row in prdf.iterrows():
+    for index, row in podf.iterrows():
         ann_id = index
         img_id = img_dict[row['img_name']]
 
@@ -288,12 +288,6 @@ def generate_coco_split(predf, postdf, split=0.7, coco_dir="./coco"):
     val_pre_df = val_pre_df.reset_index(drop=True)
     assert len(predf) == len(train_pre_df) + len(val_pre_df)
 
-    with open(os.path.join(coco_dir, 'train.txt'), 'w') as t:
-        for i in train_pre_df.img_name.unique():
-            t.write(i + '\n')
-    with open(os.path.join(coco_dir, 'val.txt'), 'w') as v:
-        for j in val_pre_df.img_name.unique():
-            v.write(j + '\n')
     # Split post-disaster dataframe
     post = postdf['img_name'].unique()
     post_train = []
@@ -304,11 +298,17 @@ def generate_coco_split(predf, postdf, split=0.7, coco_dir="./coco"):
     post_val = list(set(post) - set(post_train))
     train_post_df = postdf[postdf['img_name'].isin(post_train)]
     val_post_df = postdf[postdf['img_name'].isin(post_val)]
-
     # Reset indices
     train_post_df = train_post_df.reset_index(drop=True)
     val_post_df = val_post_df.reset_index(drop=True)
     assert len(postdf) == len(train_post_df) + len(val_post_df)
+    
+    with open(os.path.join(coco_dir, 'train.txt'), 'w') as t:
+        for i in train_post_df.img_name.unique():
+            t.write(i + '\n')
+    with open(os.path.join(coco_dir, 'val.txt'), 'w') as v:
+        for j in val_post_df.img_name.unique():
+            v.write(j + '\n')
 
     # Create MS-COCO train val annotations
     print("Processing train split")
